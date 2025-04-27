@@ -1,0 +1,45 @@
+body {
+  background-color: #121411;
+  color: white;
+  font-family: "Noto Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+#drawing-box {
+  width: 200px;
+  height: 200px;
+  background-color: #004100;
+}
+
+h1 {
+  font-size: 4em;
+}
+h2 {
+  font-size: 3em;
+}
+h3 {
+  font-size: 2em;
+}
+
+p {
+  font-size: 1em;
+}
+
+#main {
+  width: auto;
+  height: auto;
+  background-color: #222222;
+  border-radius: 16px;
+  padding: 16px;
+  margin-inline: 16px;
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+
+#error {
+  border-color: rgb(100, 0, 0);
+  padding: 16px;
+  border-width: 6px;
+  border-style: solid;
+}
