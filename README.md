@@ -2,11 +2,11 @@
 Awesome gif here
 
 ## Contains
-[ ] A basic skillcheck
-[ ] Realistic modifiers 
-[ ] Unrealistic modifiers 
-[ ] Flashy scoring system 
-[ ] Leaderboards 
+- [ ] A basic skillcheck
+- [ ] Realistic modifiers 
+- [ ] Unrealistic modifiers 
+- [ ] Flashy scoring system 
+- [ ] Leaderboards 
 
 ## Dependencies
 - WebGL 2.0
