@@ -1,3 +1,4 @@
+const degreeRad = Math.PI / 180;
 
 function showError(error) {
   const errorSpace = document.getElementById("errorp");
@@ -31,7 +32,37 @@ function createProgram(gl, vertexShader, fragmentShader) {
   gl.deleteProgram(program)
 }
 
-function hello_webgl() {
+// Draw a sector from origin.
+function draw_sector(radius, offsetAngleRad, angleRad, precision) {
+  let positions = [];
+  for (let triangleID = 0; triangleID < precision; triangleID++) {
+    positions[triangleID] = [
+      0, 0, // origin
+      radius * Math.sin(angleRad + (offsetAngleRad * triangleID / precision)),
+      radius * Math.cos(angleRad + (offsetAngleRad * triangleID / precision)), // triangle vertex angleRad
+      radius * Math.sin(angleRad + (offsetAngleRad * (triangleID + 1) / precision)),
+      radius * Math.cos(angleRad + (offsetAngleRad * (triangleID + 1) / precision)), // vertex angleRad + offsetAngleRad
+    ];
+  }
+  return positions;
+}
+
+function circle(gl, sides, r) {
+  var primitiveType = gl.TRIANGLES;
+  var offset = 0;
+  var count = 3;
+
+  for (let i = 0; i < sides; i++) {
+
+    var positions = [0, 0,
+      (r * Math.sin(Math.PI * 2 * i / sides)), (r * Math.cos(Math.PI * 2 * i / sides)),
+      (r * Math.sin(Math.PI * 2 * (i + 1) / sides)), (r * Math.cos(Math.PI * 2 * (i + 1) / sides))]
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    gl.drawArrays(primitiveType, offset, count);
+  }
+}
+
+function draw_sectors() {
   const canvas = document.getElementById("drawing-box");
   if (!canvas) {
     showError("Can't get canvas by ID!");
@@ -100,35 +131,20 @@ function hello_webgl() {
 
   gl.bindVertexArray(vao);
 
-
+  let positions = draw_sector(0.5, degreeRad * 15, degreeRad * (Math.round(Math.random() * 190) + 80), 20);
   var primitiveType = gl.TRIANGLES;
   var offset = 0;
   var count = 3;
-
-  gl.drawArrays(primitiveType, offset, count);
-
-  let r = 0.7;
-  let sides = 100;
-  for (let i = 1; i <= sides; i++) {
-
-    var positions = [0, 0,
-      (r * Math.sin(Math.PI * 2 * i / sides)), (r * Math.cos(Math.PI * 2 * i / sides)),
-      (r * Math.sin(Math.PI * 2 * (i + 1) / sides)), (r * Math.cos(Math.PI * 2 * (i + 1) / sides))]
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+  for (let index = 0; index < positions.length; index++) {
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions[index]), gl.STATIC_DRAW);
     gl.drawArrays(primitiveType, offset, count);
   }
 
-
-
-
-
-
-
-
+  circle(gl, 50, 0.45);
 
   showError("good");
 
 
 }
 
-hello_webgl()
+draw_sectors()
