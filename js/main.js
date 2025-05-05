@@ -1,4 +1,12 @@
 const degreeRad = Math.PI / 180;
+let trigger = false;
+const area = document.getElementById("trigger-area");
+
+area.addEventListener("keydown", (e) => {
+  if (e.key == "s") {
+    trigger = true;
+  }
+})
 
 function showError(error) {
   const errorSpace = document.getElementById("errorp");
@@ -34,33 +42,39 @@ function createProgram(gl, vertexShader, fragmentShader) {
 
 // Draw a sector from origin.
 function draw_sector(radius, offsetAngleRad, angleRad, precision) {
-  let startingPoint = [300, 300];
+  const center_x = 300;
+  const center_y = 300;
+
   let positions = [];
-  for (let triangleID = 0; triangleID < precision; triangleID++) {
-    positions[triangleID] = [
-      startingPoint[0], startingPoint[1], // origin
-      startingPoint[0] + radius * Math.sin(angleRad + (offsetAngleRad * triangleID / precision)),
-      startingPoint[1] + radius * Math.cos(angleRad + (offsetAngleRad * triangleID / precision)), // triangle vertex angleRad
-      startingPoint[0] + radius * Math.sin(angleRad + (offsetAngleRad * (triangleID + 1) / precision)),
-      startingPoint[1] + radius * Math.cos(angleRad + (offsetAngleRad * (triangleID + 1) / precision)), // vertex angleRad + offsetAngleRad
-    ];
+
+  for (let i = 0; i < precision; i++) {
+    positions[i * 6] = center_x;
+    positions[i * 6 + 1] = center_y;
+    positions[i * 6 + 2] = center_x + radius * Math.cos(angleRad + (offsetAngleRad * i / precision));
+    positions[i * 6 + 3] = center_y + radius * Math.sin(angleRad + (offsetAngleRad * i / precision));
+    positions[i * 6 + 4] = center_x + radius * Math.cos(angleRad + (offsetAngleRad * (i + 1) / precision));
+    positions[i * 6 + 5] = center_y + radius * Math.sin(angleRad + (offsetAngleRad * (i + 1) / precision));
   }
   return positions;
+
 }
 
-function circle(gl, sides, r) {
-  var primitiveType = gl.TRIANGLES;
-  var offset = 0;
-  var count = 3;
+function circle(sides, r) {
+  const center_x = 300;
+  const center_y = 300;
+
+  let positions = [];
 
   for (let i = 0; i < sides; i++) {
-
-    var positions = [300, 300,
-      300 + (r * Math.sin(Math.PI * 2 * i / sides)), 300 + (r * Math.cos(Math.PI * 2 * i / sides)),
-      300 + (r * Math.sin(Math.PI * 2 * (i + 1) / sides)), 300 + (r * Math.cos(Math.PI * 2 * (i + 1) / sides))]
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-    gl.drawArrays(primitiveType, offset, count);
+    positions[i * 6] = center_x;
+    positions[i * 6 + 1] = center_y;
+    positions[i * 6 + 2] = center_x + (r * Math.cos(Math.PI * 2 * i / sides));
+    positions[i * 6 + 3] = center_y + (r * Math.sin(Math.PI * 2 * i / sides));
+    positions[i * 6 + 4] = center_x + (r * Math.cos(Math.PI * 2 * (i + 1) / sides));
+    positions[i * 6 + 5] = center_y + (r * Math.sin(Math.PI * 2 * (i + 1) / sides));
   }
+
+  return positions;
 }
 
 function draw_sectors() {
@@ -79,16 +93,14 @@ function draw_sectors() {
 
   in vec2 a_position;
   uniform vec2 u_resolution;
-  uniform vec2 u_rotation;
 
   void main() {
     
     vec2 zeroToOne = a_position / u_resolution;
     vec2 zeroToTwo = zeroToOne * 2.0;
     vec2 clipSpace = zeroToTwo - 1.0;
-    vec2 rotated_position = vec2(clipSpace.x * u_rotation.y + clipSpace.y * u_rotation.x, clipSpace.y * u_rotation.y + clipSpace.x * u_rotation.x);
 
-    gl_Position = vec4(rotated_position.x, rotated_position.y, 1.0, 1.0);
+    gl_Position = vec4(clipSpace, 1.0, 1.0);
 
   }`;
 
@@ -112,83 +124,155 @@ function draw_sectors() {
   var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
   var program = createProgram(gl, vertexShader, fragmentShader);
 
-
-
-  var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-  var postionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, postionBuffer);
-
-  var vao = gl.createVertexArray();
-  gl.bindVertexArray(vao);
-  gl.enableVertexAttribArray(positionAttributeLocation);
-
-  var size = 2;
-  var type = gl.FLOAT;
-  var normalize = false;
-  var stride = 0;
-  var offset = 0;
-  gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
-
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-  gl.clearColor(0, 0, 0, 1);
-
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
   gl.useProgram(program);
-
-  var resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-  gl.uniform2f(resolutionUniformLocation, 600, 600);
-
-  var rotationUniformLocation = gl.getUniformLocation(program, "u_rotation");
-  gl.uniform2f(rotationUniformLocation, 0.1, 1);
-
-  var resolutionUniformLocation = gl.getUniformLocation(program, "u_color");
-
-  gl.bindVertexArray(vao);
 
   const skillcheck_radius = 78;
   const skillcheck_width = 4;
-
-  gl.uniform4f(resolutionUniformLocation, 1, 1, 1, 0.9);
-  circle(gl, 50, skillcheck_radius - skillcheck_width);
-
-  gl.uniform4f(resolutionUniformLocation, 0, 0, 0, 0.9);
-  circle(gl, 50, skillcheck_radius - skillcheck_width - 1);
-
-  const startingAngle = degreeRad * (Math.round(Math.random() * 190) + 80);
+  let startingAngle = degreeRad * (Math.round(Math.random() * 190) + 80);
   const maxOffset = 50 * degreeRad;
   const greatOffset = 15 * degreeRad;
   const fifty = Math.round(Math.random());
 
+  const greatPrecision = 50;
+  const normalPrecision = 50;
+  const circlePrecision = 50;
+
   var primitiveType = gl.TRIANGLES;
   var offset = 0;
-  var count = 3;
 
-  let positions = draw_sector(skillcheck_radius, maxOffset, startingAngle, 20);
+  const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
 
-  gl.uniform4f(resolutionUniformLocation, 1, 1, 1, 0.9);
+  const alertCirclePositions = circle(circlePrecision, skillcheck_radius - skillcheck_width - 2);
+  const outlineCirclePositions = circle(circlePrecision, skillcheck_radius - skillcheck_width);
+  const maskCirclePositions = circle(circlePrecision, skillcheck_radius - 2 * skillcheck_width);
 
-  for (let index = 0; index < positions.length; index++) {
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions[index]), gl.STATIC_DRAW);
-    gl.drawArrays(primitiveType, offset, count);
+
+  // buffer for gray circle
+  const alertCircleBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, alertCircleBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(alertCirclePositions), gl.STATIC_DRAW);
+
+  // alert circle VAO
+  const alertCircleVAO = gl.createVertexArray();
+  gl.bindVertexArray(alertCircleVAO);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, 0, 0, 0);
+  gl.enableVertexAttribArray(positionAttributeLocation);
+  gl.bindVertexArray(null);
+
+  // buffer for white outline circle 
+  const outlineCircleBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, outlineCircleBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outlineCirclePositions), gl.STATIC_DRAW);
+
+  // white outline circle VAO
+  const outlineCircleVAO = gl.createVertexArray();
+  gl.bindVertexArray(outlineCircleVAO);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, 0, 0, 0);
+  gl.enableVertexAttribArray(positionAttributeLocation);
+  gl.bindVertexArray(null);
+
+  // buffer for masking circle
+  const maskingCircleBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, maskingCircleBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(maskCirclePositions), gl.STATIC_DRAW);
+
+  // masking circle VAO
+  const maskingCircleVAO = gl.createVertexArray();
+  gl.bindVertexArray(maskingCircleVAO);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, 0, 0, 0);
+  gl.enableVertexAttribArray(positionAttributeLocation);
+  gl.bindVertexArray(null);
+
+  // buffer for sector
+  let sectorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, sectorBuffer);
+  // sc VAO
+  const sectorVAO = gl.createVertexArray();
+  gl.bindVertexArray(sectorVAO);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, 0, 0, 0);
+  gl.enableVertexAttribArray(positionAttributeLocation);
+  gl.bindVertexArray(null);
+
+
+  const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+  const colorUniformLocation = gl.getUniformLocation(program, "u_color");
+
+  const increment = 1500;
+  let inctime = increment;
+
+
+  const frame = function(dt) {
+
+    if (dt - inctime > increment) {
+      startingAngle = degreeRad * (Math.round(Math.random() * 190) + 80);
+      inctime += increment;
+    }
+
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.uniform2f(resolutionUniformLocation, 600, 600);
+    gl.uniform4f(colorUniformLocation, 1, 1, 1, 1);
+
+    gl.bindVertexArray(outlineCircleVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineCircleBuffer);
+    gl.drawArrays(primitiveType, offset, circlePrecision * 3);
+    gl.bindVertexArray(null);
+
+    gl.uniform4f(colorUniformLocation, 0.1, 0.1, 0.1, 1);
+    gl.bindVertexArray(alertCircleVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, alertCircleBuffer);
+    gl.drawArrays(primitiveType, offset, circlePrecision * 3);
+    gl.bindVertexArray(null);
+
+
+    let greatPositions;
+    if (fifty === 1) {
+      greatPositions = draw_sector(skillcheck_radius, greatOffset, startingAngle - greatOffset, greatPrecision)
+    } else {
+      greatPositions = draw_sector(skillcheck_radius, greatOffset, startingAngle + maxOffset, greatPrecision)
+    }
+
+    gl.uniform4f(colorUniformLocation, 1, 1, 1, 1);
+    gl.bindVertexArray(sectorVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, sectorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(greatPositions), gl.STATIC_DRAW);
+    gl.drawArrays(primitiveType, offset, greatPrecision * 3);
+    gl.bindVertexArray(null);
+
+    let normalPositions = draw_sector(skillcheck_radius, maxOffset, startingAngle, normalPrecision);
+    gl.uniform4f(colorUniformLocation, 0.2, 0.2, 0.2, 1);
+    gl.bindVertexArray(sectorVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, sectorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalPositions), gl.STATIC_DRAW);
+    gl.drawArrays(primitiveType, offset, normalPrecision * 3);
+    gl.bindVertexArray(null);
+
+
+    gl.uniform4f(colorUniformLocation, 0.1, 0.1, 0.1, 1);
+    gl.bindVertexArray(maskingCircleVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, maskingCircleBuffer);
+    gl.drawArrays(primitiveType, offset, circlePrecision * 3); // * 3 cause a triangle has 3 vertexes
+    gl.bindVertexArray(null);
+    requestAnimationFrame(frame);
+
+    if (dt - inctime < 1000) {
+      let triggerPositions = draw_sector(skillcheck_radius + 2, 5 * degreeRad, -1 * ((dt - inctime) % 1000) / (1000 / 360) * degreeRad + 90 * degreeRad, 1);
+      gl.uniform4f(colorUniformLocation, 1, 0, 0, 1);
+      gl.bindVertexArray(sectorVAO);
+      gl.bindBuffer(gl.ARRAY_BUFFER, sectorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triggerPositions), gl.STATIC_DRAW);
+      gl.drawArrays(primitiveType, offset, 3);
+      gl.bindVertexArray(null);
+    }
+    if (trigger) {
+      console.log(((dt - inctime) % 1000) / (1000 / 360));
+      trigger = false;
+    }
   }
-
-  if (fifty === 1) {
-    positions = draw_sector(skillcheck_radius, maxOffset, startingAngle - greatOffset, 20);
-  } else {
-    positions = draw_sector(skillcheck_radius, maxOffset, startingAngle + greatOffset, 20);
-  }
-
-  gl.uniform4f(resolutionUniformLocation, 0.2, 0.2, 0.2, 0.9);
-
-  for (let index = 0; index < positions.length; index++) {
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions[index]), gl.STATIC_DRAW);
-    gl.drawArrays(primitiveType, offset, count);
-  }
-
-  gl.uniform4f(resolutionUniformLocation, 0, 0, 0, 1);
-  circle(gl, 50, skillcheck_radius - 2 * skillcheck_width);
+  requestAnimationFrame(frame);
 }
 
 draw_sectors()
