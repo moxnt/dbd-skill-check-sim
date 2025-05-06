@@ -1,3 +1,4 @@
+import { animate } from "https://cdn.jsdelivr.net/npm/motion@latest/+esm";
 const degreeRad = Math.PI / 180;
 
 // Setup input
@@ -5,7 +6,7 @@ let trigger = false;
 const area = document.getElementById("trigger-area");
 
 area.addEventListener("keydown", (e) => {
-  if (e.key == "s") {
+  if (e.key == " ") {
     trigger = true;
   }
 })
@@ -227,6 +228,10 @@ function draw_sectors() {
   let attempted = false;
   let lineStartAngle;
 
+
+  let streak = 0;
+  let score = 0;
+  /// RENDER LOOP
   const frame = function(dt) {
 
     if (dt - inctime > skillcheckLifetime) {
@@ -307,17 +312,64 @@ function draw_sectors() {
 
       trigger = false;
 
+      const multiplier = 1 + streak * 0.5;
+      const scoreboard = document.getElementById(`score-div`);
+
+
       // Fifty 1 = before
       if (fifty === 1 && angle >= startingAngleDeg - greatSCDeg && angle <= startingAngleDeg) {
         console.info("Great skill check (area before good) + 300");
+        streak += 1;
+        animate(score, score + 300 * multiplier
+          , {
+            duration: 0.5, onUpdate: (latest) =>
+              (scoreboard.innerText = `${Math.round(latest)} + ${300 * multiplier}`)
+          });
+        score += 300;
       }
+
       else if (fifty === 0 && angle >= startingAngleDeg + goodSCDeg && angle <= startingAngleDeg + goodSCDeg + greatSCDeg) {
         console.info("Great skill check (area after good) + 300");
+        streak += 1;
+        animate(score, score + 300 * multiplier
+          , {
+            duration: 0.5, onUpdate: (latest) =>
+              (scoreboard.innerText = `${Math.round(latest)} + ${300 * multiplier}`)
+          });
+        score += 300;
+
       } else if (angle >= startingAngleDeg && angle <= startingAngleDeg + goodSCDeg) {
         console.info("Good skill check + 100");
+        animate(score, score + 100 * multiplier
+          , {
+            duration: 0.5, onUpdate: (latest) =>
+              (scoreboard.innerText = `${Math.round(latest)} + ${100 * multiplier}`)
+          });
+        score += 300;
       } else {
         console.info("Miss");
+        streak = 0;
       }
+      if (streak > 5) {
+        streak = 5;
+      }
+
+
+      for (let i = 1; i <= streak; i++) {
+        const streake = document.getElementById(`streak-${i}`)
+        animate("#121212", "#A13d10"
+          , { duration: 0.5, onUpdate: (latest) => (streake.style.backgroundColor = latest) });
+      }
+      if (streak == 0) {
+        for (let i = 1; i <= 5; i++) {
+          const streake = document.getElementById(`streak-${i}`)
+          animate("#212121", "#121212"
+            , { duration: 0.5, onUpdate: (latest) => (streake.style.backgroundColor = latest) });
+        }
+      }
+
+
+
 
       attempted = true;
     }

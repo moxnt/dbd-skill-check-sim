@@ -14,15 +14,20 @@
   </head>
   <body id="trigger-area">
     <div id="main">
-      <h3>Main stuff</h3>
+      <h3>Atstarpe lai sāktu</h3>
       <canvas id="drawing-box" width="1280" height="720"></canvas>
+      <div id="score-line">
+        <div id="score-div"></div>
+        <div id="streak-1" class="streak">1.5x</div>
+        <div id="streak-2" class="streak">2.0x</div>
+        <div id="streak-3" class="streak">2.5x</div>
+        <div id="streak-4" class="streak">3.0x</div>
+        <div id="streak-5" class="streak">3.5x</div>
+      </div>
       <div id="error">
-        <p id="errorp">WebGL error box</p>
+        <p id="errorp"></p>
       </div>
     </div>
   </body>
-  <script type="module">
-    import { animate } from "https://cdn.jsdelivr.net/npm/motion@latest/+esm";
-  </script>
-  <script src="js/main.js"></script>
+  <script src="js/main.js" type="module"></script>
 </html>

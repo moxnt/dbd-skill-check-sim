@@ -4,13 +4,46 @@ body {
   font-family: "Noto Sans", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
+  margin: 0px;
+  padding: 0px;
+  height: 100vh;
+}
+
+#score-line {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  margin: 4px;
+}
+
+.streak {
+  margin-inline: 2px;
+  width: 12%;
+  background-color: #121212;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 0.5rem;
+}
+
+#score-div {
+  margin-inline: 2px;
+  width: 40%;
+  background-color: #b07d10;
+  padding: 12px;
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 #drawing-box {
   display: block;
   width: 1280px;
   height: 720px;
-  background-color: #004100;
+  background-color: #000000;
+  border-radius: 0.5rem;
   margin: auto;
 }
 
@@ -46,7 +79,6 @@ p {
 
 #error {
   border-color: rgb(100, 0, 0);
-  padding: 16px;
-  border-width: 6px;
+  border-width: 1px;
   border-style: solid;
 }
