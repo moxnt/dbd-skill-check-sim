@@ -15,11 +15,14 @@
   <body id="trigger-area">
     <div id="main">
       <h3>Main stuff</h3>
-      <canvas id="drawing-box" width="600" height="600"></canvas>
+      <canvas id="drawing-box" width="1280" height="720"></canvas>
       <div id="error">
         <p id="errorp">WebGL error box</p>
       </div>
     </div>
   </body>
+  <script type="module">
+    import { animate } from "https://cdn.jsdelivr.net/npm/motion@latest/+esm";
+  </script>
   <script src="js/main.js"></script>
 </html>

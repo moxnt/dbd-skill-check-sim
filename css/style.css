@@ -7,9 +7,11 @@ body {
 }
 
 #drawing-box {
-  width: 600px;
-  height: 600px;
+  display: block;
+  width: 1280px;
+  height: 720px;
   background-color: #004100;
+  margin: auto;
 }
 
 h1 {
@@ -20,6 +22,11 @@ h2 {
 }
 h3 {
   font-size: 2em;
+  display: block;
+  width: fit-content;
+  margin-inline: auto;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 p {

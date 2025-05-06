@@ -1,4 +1,6 @@
 const degreeRad = Math.PI / 180;
+
+// Setup input
 let trigger = false;
 const area = document.getElementById("trigger-area");
 
@@ -7,6 +9,7 @@ area.addEventListener("keydown", (e) => {
     trigger = true;
   }
 })
+
 
 function showError(error) {
   const errorSpace = document.getElementById("errorp");
@@ -41,27 +44,29 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // Draw a sector from origin.
-function draw_sector(radius, offsetAngleRad, angleRad, precision) {
-  const center_x = 300;
-  const center_y = 300;
+function draw_sector(radius, sizeAngleRad, angleRad, precision) {
+
+  const center_x = 640;
+  const center_y = 360;
+  const trueAngleRad = angleRad * -1 + (Math.PI / 2);
 
   let positions = [];
 
   for (let i = 0; i < precision; i++) {
     positions[i * 6] = center_x;
     positions[i * 6 + 1] = center_y;
-    positions[i * 6 + 2] = center_x + radius * Math.cos(angleRad + (offsetAngleRad * i / precision));
-    positions[i * 6 + 3] = center_y + radius * Math.sin(angleRad + (offsetAngleRad * i / precision));
-    positions[i * 6 + 4] = center_x + radius * Math.cos(angleRad + (offsetAngleRad * (i + 1) / precision));
-    positions[i * 6 + 5] = center_y + radius * Math.sin(angleRad + (offsetAngleRad * (i + 1) / precision));
+    positions[i * 6 + 2] = center_x + radius * Math.cos(trueAngleRad - (sizeAngleRad * i / precision));
+    positions[i * 6 + 3] = center_y + radius * Math.sin(trueAngleRad - (sizeAngleRad * i / precision));
+    positions[i * 6 + 4] = center_x + radius * Math.cos(trueAngleRad - (sizeAngleRad * (i + 1) / precision));
+    positions[i * 6 + 5] = center_y + radius * Math.sin(trueAngleRad - (sizeAngleRad * (i + 1) / precision));
   }
   return positions;
 
 }
 
 function circle(sides, r) {
-  const center_x = 300;
-  const center_y = 300;
+  const center_x = 640;
+  const center_y = 360;
 
   let positions = [];
 
@@ -120,32 +125,37 @@ function draw_sectors() {
   }
   `;
 
-  var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-  var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-  var program = createProgram(gl, vertexShader, fragmentShader);
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+  const program = createProgram(gl, vertexShader, fragmentShader);
 
   gl.useProgram(program);
 
+  const greatSCDeg = 15;
+  const goodSCDeg = 50;
+
   const skillcheck_radius = 78;
   const skillcheck_width = 4;
-  let startingAngle = degreeRad * (Math.round(Math.random() * 190) + 80);
-  const maxOffset = 50 * degreeRad;
-  const greatOffset = 15 * degreeRad;
-  const fifty = Math.round(Math.random());
+  const maxOffset = goodSCDeg * degreeRad;
+  const greatOffset = greatSCDeg * degreeRad;
 
+
+  // Drawing constants
   const greatPrecision = 50;
   const normalPrecision = 50;
   const circlePrecision = 50;
-
-  var primitiveType = gl.TRIANGLES;
-  var offset = 0;
+  const primitiveType = gl.TRIANGLES;
+  const offset = 0;
 
   const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+  const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+  const colorUniformLocation = gl.getUniformLocation(program, "u_color");
 
   const alertCirclePositions = circle(circlePrecision, skillcheck_radius - skillcheck_width - 2);
   const outlineCirclePositions = circle(circlePrecision, skillcheck_radius - skillcheck_width);
   const maskCirclePositions = circle(circlePrecision, skillcheck_radius - 2 * skillcheck_width);
 
+  const secondMaskingCirclePositions = circle(circlePrecision, skillcheck_radius - 2 * skillcheck_width - 4);
 
   // buffer for gray circle
   const alertCircleBuffer = gl.createBuffer();
@@ -183,6 +193,18 @@ function draw_sectors() {
   gl.enableVertexAttribArray(positionAttributeLocation);
   gl.bindVertexArray(null);
 
+  // buffer for second masking circle
+  const secondMaskingCircleBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, secondMaskingCircleBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(secondMaskingCirclePositions), gl.STATIC_DRAW);
+
+  // second masking circle VAO
+  const secondMaskingCircleVAO = gl.createVertexArray();
+  gl.bindVertexArray(secondMaskingCircleVAO);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, 0, 0, 0);
+  gl.enableVertexAttribArray(positionAttributeLocation);
+  gl.bindVertexArray(null);
+
   // buffer for sector
   let sectorBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, sectorBuffer);
@@ -193,19 +215,25 @@ function draw_sectors() {
   gl.enableVertexAttribArray(positionAttributeLocation);
   gl.bindVertexArray(null);
 
+  // Game state
+  //
+  const rotationTime = 1400;
+  const angularVelocity = 360 / rotationTime;
+  const skillcheckLifetime = rotationTime + 200; // When to redraw skillcheck
 
-  const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
-  const colorUniformLocation = gl.getUniformLocation(program, "u_color");
-
-  const increment = 1500;
-  let inctime = increment;
-
+  let fifty = Math.round(Math.random());
+  let startingAngleDeg = Math.round(Math.random() * 180) + 90;
+  let inctime = skillcheckLifetime;
+  let attempted = false;
+  let lineStartAngle;
 
   const frame = function(dt) {
 
-    if (dt - inctime > increment) {
-      startingAngle = degreeRad * (Math.round(Math.random() * 190) + 80);
-      inctime += increment;
+    if (dt - inctime > skillcheckLifetime) {
+      startingAngleDeg = Math.round(Math.random() * 180) + 90;
+      fifty = Math.round(Math.random());
+      inctime += skillcheckLifetime;
+      attempted = false;
     }
 
 
@@ -213,7 +241,7 @@ function draw_sectors() {
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.uniform2f(resolutionUniformLocation, 600, 600);
+    gl.uniform2f(resolutionUniformLocation, 1280, 720);
     gl.uniform4f(colorUniformLocation, 1, 1, 1, 1);
 
     gl.bindVertexArray(outlineCircleVAO);
@@ -228,11 +256,13 @@ function draw_sectors() {
     gl.bindVertexArray(null);
 
 
+    // Fifty 1 -> Great before good 
+    // TODO: Rewrite math to be better
     let greatPositions;
     if (fifty === 1) {
-      greatPositions = draw_sector(skillcheck_radius, greatOffset, startingAngle - greatOffset, greatPrecision)
+      greatPositions = draw_sector(skillcheck_radius, greatOffset, (startingAngleDeg * degreeRad) - greatOffset, greatPrecision)
     } else {
-      greatPositions = draw_sector(skillcheck_radius, greatOffset, startingAngle + maxOffset, greatPrecision)
+      greatPositions = draw_sector(skillcheck_radius, greatOffset, (startingAngleDeg * degreeRad) + maxOffset, greatPrecision)
     }
 
     gl.uniform4f(colorUniformLocation, 1, 1, 1, 1);
@@ -242,7 +272,7 @@ function draw_sectors() {
     gl.drawArrays(primitiveType, offset, greatPrecision * 3);
     gl.bindVertexArray(null);
 
-    let normalPositions = draw_sector(skillcheck_radius, maxOffset, startingAngle, normalPrecision);
+    let normalPositions = draw_sector(skillcheck_radius, maxOffset, startingAngleDeg * degreeRad, normalPrecision);
     gl.uniform4f(colorUniformLocation, 0.2, 0.2, 0.2, 1);
     gl.bindVertexArray(sectorVAO);
     gl.bindBuffer(gl.ARRAY_BUFFER, sectorBuffer);
@@ -256,10 +286,13 @@ function draw_sectors() {
     gl.bindBuffer(gl.ARRAY_BUFFER, maskingCircleBuffer);
     gl.drawArrays(primitiveType, offset, circlePrecision * 3); // * 3 cause a triangle has 3 vertexes
     gl.bindVertexArray(null);
-    requestAnimationFrame(frame);
 
-    if (dt - inctime < 1000) {
-      let triggerPositions = draw_sector(skillcheck_radius + 2, 5 * degreeRad, -1 * ((dt - inctime) % 1000) / (1000 / 360) * degreeRad + 90 * degreeRad, 1);
+    if (!attempted) {
+      lineStartAngle = ((dt - inctime) % rotationTime) * angularVelocity
+    }
+
+    if (dt - inctime < rotationTime) {
+      let triggerPositions = draw_sector(skillcheck_radius + 2, 4 * degreeRad, lineStartAngle * degreeRad, 1);
       gl.uniform4f(colorUniformLocation, 1, 0, 0, 1);
       gl.bindVertexArray(sectorVAO);
       gl.bindBuffer(gl.ARRAY_BUFFER, sectorBuffer);
@@ -267,10 +300,35 @@ function draw_sectors() {
       gl.drawArrays(primitiveType, offset, 3);
       gl.bindVertexArray(null);
     }
+
+
     if (trigger) {
-      console.log(((dt - inctime) % 1000) / (1000 / 360));
+      const angle = lineStartAngle + 2;
+
       trigger = false;
+
+      // Fifty 1 = before
+      if (fifty === 1 && angle >= startingAngleDeg - greatSCDeg && angle <= startingAngleDeg) {
+        console.info("Great skill check (area before good) + 300");
+      }
+      else if (fifty === 0 && angle >= startingAngleDeg + goodSCDeg && angle <= startingAngleDeg + goodSCDeg + greatSCDeg) {
+        console.info("Great skill check (area after good) + 300");
+      } else if (angle >= startingAngleDeg && angle <= startingAngleDeg + goodSCDeg) {
+        console.info("Good skill check + 100");
+      } else {
+        console.info("Miss");
+      }
+
+      attempted = true;
     }
+
+    gl.uniform4f(colorUniformLocation, 0.1, 0.1, 0.1, 1);
+    gl.bindVertexArray(secondMaskingCircleVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, secondMaskingCircleBuffer);
+    gl.drawArrays(primitiveType, offset, circlePrecision * 3); // * 3 cause a triangle has 3 vertexes
+    gl.bindVertexArray(null);
+
+    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 }
