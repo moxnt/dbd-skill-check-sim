@@ -2,7 +2,7 @@
 Awesome gif here
 
 ## Contains
-- [ ] A basic skillcheck
+- [x] A basic skillcheck
 - [ ] Realistic modifiers 
 - [ ] Unrealistic modifiers 
 - [ ] Flashy scoring system 
