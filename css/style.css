@@ -82,3 +82,8 @@ p {
   border-width: 1px;
   border-style: solid;
 }
+
+#content {
+  width: 100vw;
+  height: 100vh;
+}

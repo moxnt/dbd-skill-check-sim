@@ -89,7 +89,7 @@ class Skillcheck {
   draw_sector;
   sector_pos_deg;
 
-  constructor(current_time, duration, offset_x, offset_y, preperation = 400) {
+  constructor(current_time, duration, offset_x, offset_y, preperation = 100) {
 
     this.great_before = Math.round(Math.random());
     this.clockwise = (Math.round(Math.random()) === 1);
@@ -136,7 +136,8 @@ class Skillcheck {
 const degreeRad = Math.PI / 180;
 const greatSCDeg = 15;
 const goodSCDeg = 50;
-const duration = 1200;
+const duration = 900;
+const quick = true;
 
 const skillcheck_radius = 78;
 const skillcheck_width = 4;
@@ -400,7 +401,12 @@ const frame = function(dt) {
       }
     }
 
-    attempted = true;
+    if (quick) {
+      current_skillcheck = new Skillcheck(dt, duration + 500, Math.random() - 0.5, Math.random() - 0.5)
+      gl.uniform2f(translation, current_skillcheck.offset[0], current_skillcheck.offset[1]);
+    } else {
+      attempted = true;
+    }
   }
 
   gl.uniform4f(colorUniformLocation, 0.1, 0.1, 0.1, 1);
