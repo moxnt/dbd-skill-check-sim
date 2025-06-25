@@ -78,9 +78,6 @@ p {
 }
 
 #error {
-  border-color: rgb(100, 0, 0);
-  border-width: 1px;
-  border-style: solid;
 }
 
 #content {
